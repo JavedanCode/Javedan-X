@@ -13,6 +13,7 @@ import userRouter from './routes/user.routes.js';
 import postRouter from './routes/post.routes.js';
 import commentRouter from './routes/comment.routes.js';
 import followRouter from './routes/follow.routes.js';
+import likeRouter from './routes/like.routes.js';
 
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -46,6 +47,7 @@ app.use('/users', userRouter);
 app.use('/posts', postRouter);
 app.use('/', commentRouter);
 app.use('/', followRouter);
+app.use('/', likeRouter);
 
 app.get('/health', (req, res) => {
   res.status(200).json({
