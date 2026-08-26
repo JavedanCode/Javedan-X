@@ -19,6 +19,12 @@ enum VerificationTokenType {
   EMAIL_CHANGE
 }
 
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
 model User {
   id           String  @id @default(uuid())
   username     String  @unique
@@ -26,6 +32,7 @@ model User {
   passwordHash String?
 
   displayName String?
+  bio         String?
   avatarUrl   String?
 
   emailVerifiedAt   DateTime?
@@ -38,6 +45,13 @@ model User {
   sessions Session[]
 
   verificationTokens VerificationToken[]
+
+  posts    Post[]
+  comments Comment[]
+  likes    Like[]
+
+  sentFollowRequests     Follow[] @relation("FollowRequester")
+  receivedFollowRequests Follow[] @relation("FollowRecipient")
 
   @@index([createdAt])
 }
@@ -93,4 +107,69 @@ model VerificationToken {
 
   @@index([userId, type])
   @@index([expiresAt])
+}
+
+model Post {
+  id       String  @id @default(uuid())
+  authorId String
+  content  String
+  imageUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+
+  @@index([authorId, createdAt])
+  @@index([createdAt])
+}
+
+model Comment {
+  id       String @id @default(uuid())
+  postId   String
+  authorId String
+  content  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId, createdAt])
+  @@index([authorId, createdAt])
+}
+
+model Like {
+  id     String @id @default(uuid())
+  postId String
+  userId String
+
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Follow {
+  id          String       @id @default(uuid())
+  requesterId String
+  recipientId String
+  status      FollowStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requester User @relation("FollowRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient User @relation("FollowRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, recipientId])
+  @@index([requesterId, status])
+  @@index([recipientId, status])
 }
