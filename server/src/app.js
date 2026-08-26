@@ -10,6 +10,7 @@ import { configurePassport } from './config/passport.js';
 
 import authRoutes from './routes/auth.routes.js';
 import userRouter from './routes/user.routes.js';
+import postRouter from './routes/post.routes.js';
 
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -40,6 +41,7 @@ app.use(passport.initialize());
 
 app.use('/auth', authRoutes);
 app.use('/users', userRouter);
+app.use('/posts', postRouter);
 
 app.get('/health', (req, res) => {
   res.status(200).json({
