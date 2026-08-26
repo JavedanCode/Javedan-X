@@ -11,7 +11,7 @@ import {
 
 import { authenticate } from '../middleware/authenticate.js';
 
-import { validate } from '../middleware/validate.js';
+import { validate, validateParams } from '../middleware/validate.js';
 
 import {
   updateProfileSchema,
@@ -20,7 +20,10 @@ import {
   confirmEmailChangeSchema,
   deleteAccountSchema,
   changePasswordSchema,
+  userIdParamsSchema,
 } from '../schemas/user.schema.js';
+
+import { getPostsByUser } from '../controllers/post.controller.js';
 
 const router = Router();
 
@@ -50,5 +53,7 @@ router.post(
 );
 
 router.delete('/me', authenticate, validate(deleteAccountSchema), deleteAccount);
+
+router.get('/:userId/posts', authenticate, validateParams(userIdParamsSchema), getPostsByUser);
 
 export default router;
