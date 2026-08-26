@@ -50,3 +50,7 @@ export const changePasswordSchema = z.object({
 export const deleteAccountSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required.').optional(),
 });
+
+export const userIdParamsSchema = z.object({
+  userId: z.uuid('User ID must be a valid UUID.'),
+});
