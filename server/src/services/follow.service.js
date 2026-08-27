@@ -288,7 +288,7 @@ export async function findFollowing({ userId }) {
     throw new AppError('User not found.', 404, 'USER_NOT_FOUND');
   }
 
-  const follows = await prisma.follow.findMany({
+  return prisma.follow.findMany({
     where: {
       requesterId: userId,
       status: 'ACCEPTED',
@@ -304,8 +304,6 @@ export async function findFollowing({ userId }) {
       },
     },
   });
-
-  return follows;
 }
 
 export async function findFollowers({ userId }) {
@@ -322,7 +320,7 @@ export async function findFollowers({ userId }) {
     throw new AppError('User not found.', 404, 'USER_NOT_FOUND');
   }
 
-  const follows = await prisma.follow.findMany({
+  return prisma.follow.findMany({
     where: {
       recipientId: userId,
       status: 'ACCEPTED',
@@ -338,8 +336,6 @@ export async function findFollowers({ userId }) {
       },
     },
   });
-
-  return follows;
 }
 
 export async function findPendingFollowRequests({ userId }) {
@@ -368,6 +364,38 @@ export async function findPendingFollowRequests({ userId }) {
       id: true,
       createdAt: true,
       requester: {
+        select: followUserSelect,
+      },
+    },
+  });
+}
+
+export async function findPendingSentFollowRequests({ userId }) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!user) {
+    throw new AppError('User not found.', 404, 'USER_NOT_FOUND');
+  }
+
+  return prisma.follow.findMany({
+    where: {
+      requesterId: userId,
+      status: 'PENDING',
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    select: {
+      id: true,
+      createdAt: true,
+      recipient: {
         select: followUserSelect,
       },
     },
