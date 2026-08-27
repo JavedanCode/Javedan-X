@@ -65,12 +65,12 @@ describe('Follow API', () => {
     return response.headers['set-cookie'];
   }
 
-  describe('POST /users/:recipientId/follow', () => {
+  describe('POST /follows/users/:recipientId/follow', () => {
     it('sends a follow request', async () => {
       const cookies = await login(requester.email);
 
       const response = await request(app)
-        .post(`/users/${recipient.id}/follow`)
+        .post(`/follows/users/${recipient.id}/follow`)
         .set('Cookie', cookies);
 
       expect(response.status).toBe(201);
@@ -99,7 +99,7 @@ describe('Follow API', () => {
       const cookies = await login(requester.email);
 
       const response = await request(app)
-        .post(`/users/${requester.id}/follow`)
+        .post(`/follows/users/${requester.id}/follow`)
         .set('Cookie', cookies);
 
       expect(response.status).toBe(400);
@@ -123,7 +123,7 @@ describe('Follow API', () => {
       });
 
       const response = await request(app)
-        .post(`/users/${recipient.id}/follow`)
+        .post(`/follows/users/${recipient.id}/follow`)
         .set('Cookie', cookies);
 
       expect(response.status).toBe(409);
@@ -139,7 +139,9 @@ describe('Follow API', () => {
     it('rejects an invalid recipient ID', async () => {
       const cookies = await login(requester.email);
 
-      const response = await request(app).post('/users/not-a-uuid/follow').set('Cookie', cookies);
+      const response = await request(app)
+        .post('/follows/users/not-a-uuid/follow')
+        .set('Cookie', cookies);
 
       expect(response.status).toBe(400);
     });
@@ -148,20 +150,20 @@ describe('Follow API', () => {
       const cookies = await login(requester.email);
 
       const response = await request(app)
-        .post('/users/00000000-0000-0000-0000-000000000000/follow')
+        .post('/follows/users/00000000-0000-0000-0000-000000000000/follow')
         .set('Cookie', cookies);
 
       expect(response.status).toBe(404);
     });
 
     it('rejects an unauthenticated request', async () => {
-      const response = await request(app).post(`/users/${recipient.id}/follow`);
+      const response = await request(app).post(`/follows/users/${recipient.id}/follow`);
 
       expect(response.status).toBe(401);
     });
   });
 
-  describe('GET /users/me/following', () => {
+  describe('GET /follows/users/me/following', () => {
     it('returns the users the current user follows', async () => {
       const cookies = await login(requester.email);
 
@@ -181,7 +183,7 @@ describe('Follow API', () => {
         },
       });
 
-      const response = await request(app).get('/users/me/following').set('Cookie', cookies);
+      const response = await request(app).get('/follows/users/me/following').set('Cookie', cookies);
 
       expect(response.status).toBe(200);
 
@@ -189,8 +191,8 @@ describe('Follow API', () => {
         success: true,
       });
 
-      expect(response.body.follows).toHaveLength(1);
-      expect(response.body.follows[0].recipient).toMatchObject({
+      expect(response.body.following).toHaveLength(1);
+      expect(response.body.following[0].recipient).toMatchObject({
         id: recipient.id,
         username: recipient.username,
       });
@@ -199,20 +201,20 @@ describe('Follow API', () => {
     it('returns an empty list when the user follows nobody', async () => {
       const cookies = await login(requester.email);
 
-      const response = await request(app).get('/users/me/following').set('Cookie', cookies);
+      const response = await request(app).get('/follows/users/me/following').set('Cookie', cookies);
 
       expect(response.status).toBe(200);
-      expect(response.body.follows).toEqual([]);
+      expect(response.body.following).toEqual([]);
     });
 
     it('rejects an unauthenticated request', async () => {
-      const response = await request(app).get('/users/me/following');
+      const response = await request(app).get('/follows/users/me/following');
 
       expect(response.status).toBe(401);
     });
   });
 
-  describe('GET /users/me/followers', () => {
+  describe('GET /follows/users/me/followers', () => {
     it('returns the users who follow the current user', async () => {
       const cookies = await login(recipient.email);
 
@@ -232,12 +234,16 @@ describe('Follow API', () => {
         },
       });
 
-      const response = await request(app).get('/users/me/followers').set('Cookie', cookies);
+      const response = await request(app).get('/follows/users/me/followers').set('Cookie', cookies);
 
       expect(response.status).toBe(200);
 
-      expect(response.body.follows).toHaveLength(1);
-      expect(response.body.follows[0].requester).toMatchObject({
+      expect(response.body).toMatchObject({
+        success: true,
+      });
+
+      expect(response.body.followers).toHaveLength(1);
+      expect(response.body.followers[0].requester).toMatchObject({
         id: requester.id,
         username: requester.username,
       });
@@ -246,20 +252,20 @@ describe('Follow API', () => {
     it('returns an empty list when the user has no followers', async () => {
       const cookies = await login(recipient.email);
 
-      const response = await request(app).get('/users/me/followers').set('Cookie', cookies);
+      const response = await request(app).get('/follows/users/me/followers').set('Cookie', cookies);
 
       expect(response.status).toBe(200);
-      expect(response.body.follows).toEqual([]);
+      expect(response.body.followers).toEqual([]);
     });
 
     it('rejects an unauthenticated request', async () => {
-      const response = await request(app).get('/users/me/followers');
+      const response = await request(app).get('/follows/users/me/followers');
 
       expect(response.status).toBe(401);
     });
   });
 
-  describe('GET /users/me/follow-requests', () => {
+  describe('GET /follows/users/me/follow-requests', () => {
     it('returns pending requests received by the current user', async () => {
       const cookies = await login(recipient.email);
 
@@ -279,12 +285,18 @@ describe('Follow API', () => {
         },
       });
 
-      const response = await request(app).get('/users/me/follow-requests').set('Cookie', cookies);
+      const response = await request(app)
+        .get('/follows/users/me/follow-requests')
+        .set('Cookie', cookies);
 
       expect(response.status).toBe(200);
 
-      expect(response.body.follows).toHaveLength(1);
-      expect(response.body.follows[0].requester).toMatchObject({
+      expect(response.body).toMatchObject({
+        success: true,
+      });
+
+      expect(response.body.requests).toHaveLength(1);
+      expect(response.body.requests[0].requester).toMatchObject({
         id: requester.id,
         username: requester.username,
       });
@@ -293,14 +305,16 @@ describe('Follow API', () => {
     it('returns an empty list when there are no pending requests', async () => {
       const cookies = await login(recipient.email);
 
-      const response = await request(app).get('/users/me/follow-requests').set('Cookie', cookies);
+      const response = await request(app)
+        .get('/follows/users/me/follow-requests')
+        .set('Cookie', cookies);
 
       expect(response.status).toBe(200);
-      expect(response.body.follows).toEqual([]);
+      expect(response.body.requests).toEqual([]);
     });
 
     it('rejects an unauthenticated request', async () => {
-      const response = await request(app).get('/users/me/follow-requests');
+      const response = await request(app).get('/follows/users/me/follow-requests');
 
       expect(response.status).toBe(401);
     });
@@ -390,7 +404,7 @@ describe('Follow API', () => {
 
     it('rejects an unauthenticated request', async () => {
       const response = await request(app).patch(
-        `/follows/00000000-0000-0000-0000-000000000000/accept`,
+        '/follows/00000000-0000-0000-0000-000000000000/accept',
       );
 
       expect(response.status).toBe(401);
