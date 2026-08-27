@@ -5,7 +5,7 @@ import AppRouter from "./router/AppRouter.jsx";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Javedan-X">
       <AuthProvider>
         <AppRouter />
       </AuthProvider>
