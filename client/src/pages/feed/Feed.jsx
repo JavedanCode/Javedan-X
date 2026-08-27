@@ -27,8 +27,30 @@ export default function Feed() {
   }, []);
 
   useEffect(() => {
-    loadFeed();
-  }, [loadFeed]);
+    let isMounted = true;
+
+    getFeed()
+      .then((response) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setPosts(response.posts);
+        setStatus("success");
+      })
+      .catch((err) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(err.message);
+        setStatus("error");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   function handleCreated(post) {
     setPosts((current) => [post, ...current]);
@@ -46,7 +68,6 @@ export default function Feed() {
 
   return (
     <div>
-      {/* Feed header */}
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#08081c]/90 px-5 py-4 backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <div>

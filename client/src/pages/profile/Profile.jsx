@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   CalendarDays,
@@ -55,81 +55,106 @@ export default function Profile() {
   const [isSavingBio, setIsSavingBio] = useState(false);
   const [bioError, setBioError] = useState("");
 
-  const loadProfile = useCallback(async () => {
-    if (!profileId) {
-      return;
-    }
+  useEffect(() => {
+    let isMounted = true;
 
-    setStatus("loading");
-    setError("");
-
-    try {
-      const userResponse = await getUser(profileId);
-
-      const user = userResponse?.user ?? null;
-
-      if (!user) {
-        throw new Error("User not found.");
-      }
-
-      setProfile(user);
-      setBio(user.bio ?? "");
-
-      if (isOwnProfile) {
-        setFollowStatus("idle");
-        setFollowId(null);
-
-        const postsResponse = await getUserPosts(profileId);
-
-        setPosts(postsResponse?.posts ?? []);
-        setStatus("success");
-
+    async function load() {
+      if (!profileId) {
         return;
       }
 
-      const [followingResponse, sentRequestsResponse] = await Promise.all([
-        getFollowing(),
-        getPendingSentFollowRequests(),
-      ]);
+      setStatus("loading");
+      setError("");
 
-      const following = followingResponse?.following ?? [];
-      const sentRequests = sentRequestsResponse?.sentRequests ?? [];
+      try {
+        const userResponse = await getUser(profileId);
+        const user = userResponse?.user ?? null;
 
-      const existingFollow = following.find(
-        (follow) => follow.recipient?.id === profileId,
-      );
+        if (!user) {
+          throw new Error("User not found.");
+        }
 
-      const pendingRequest = sentRequests.find(
-        (follow) => follow.recipient?.id === profileId,
-      );
+        if (!isMounted) {
+          return;
+        }
 
-      if (existingFollow) {
-        setFollowStatus("following");
-        setFollowId(existingFollow.id);
+        setProfile(user);
+        setBio(user.bio ?? "");
 
-        const postsResponse = await getUserPosts(profileId);
+        if (isOwnProfile) {
+          setFollowStatus("idle");
+          setFollowId(null);
 
-        setPosts(postsResponse?.posts ?? []);
-      } else if (pendingRequest) {
-        setFollowStatus("pending");
-        setFollowId(pendingRequest.id);
-        setPosts([]);
-      } else {
-        setFollowStatus("idle");
-        setFollowId(null);
-        setPosts([]);
+          const postsResponse = await getUserPosts(profileId);
+
+          if (!isMounted) {
+            return;
+          }
+
+          setPosts(postsResponse?.posts ?? []);
+          setStatus("success");
+
+          return;
+        }
+
+        const [followingResponse, sentRequestsResponse] = await Promise.all([
+          getFollowing(),
+          getPendingSentFollowRequests(),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        const following = followingResponse?.following ?? [];
+        const sentRequests = sentRequestsResponse?.sentRequests ?? [];
+
+        const existingFollow = following.find(
+          (follow) => follow.recipient?.id === profileId,
+        );
+
+        const pendingRequest = sentRequests.find(
+          (follow) => follow.recipient?.id === profileId,
+        );
+
+        if (existingFollow) {
+          setFollowStatus("following");
+          setFollowId(existingFollow.id);
+
+          const postsResponse = await getUserPosts(profileId);
+
+          if (!isMounted) {
+            return;
+          }
+
+          setPosts(postsResponse?.posts ?? []);
+        } else if (pendingRequest) {
+          setFollowStatus("pending");
+          setFollowId(pendingRequest.id);
+          setPosts([]);
+        } else {
+          setFollowStatus("idle");
+          setFollowId(null);
+          setPosts([]);
+        }
+
+        setStatus("success");
+      } catch (err) {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(err.message);
+        setStatus("error");
       }
-
-      setStatus("success");
-    } catch (err) {
-      setError(err.message);
-      setStatus("error");
     }
-  }, [profileId, isOwnProfile]);
 
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [profileId, isOwnProfile]);
 
   async function handleFollow() {
     if (!profileId || isOwnProfile) {

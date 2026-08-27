@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -15,8 +15,8 @@ import { useAuth } from "../../context/useAuth.js";
 export default function Settings() {
   const { user, updateUserProfile, changeUsername, logout } = useAuth();
 
-  const [username, setUsername] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
+  const [username, setUsername] = useState(user?.username ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
 
   const [usernameMessage, setUsernameMessage] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -31,15 +31,6 @@ export default function Settings() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    setUsername(user.username);
-    setAvatarUrl(user.avatarUrl ?? "");
-  }, [user]);
 
   async function handleUsernameSubmit(event) {
     event.preventDefault();
@@ -58,6 +49,8 @@ export default function Settings() {
 
     try {
       await changeUsername(trimmedUsername);
+
+      setUsername(trimmedUsername);
 
       setUsernameMessage("Username updated successfully.");
     } catch (error) {
@@ -80,6 +73,7 @@ export default function Settings() {
         avatarUrl: avatarUrl.trim() || null,
       });
 
+      setAvatarUrl(avatarUrl.trim());
       setAvatarMessage("Profile picture updated successfully.");
     } catch (error) {
       setAvatarError(error.message);

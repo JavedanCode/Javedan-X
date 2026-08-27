@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Check,
-  LoaderCircle,
-  UserCheck,
-  UserMinus,
-  UserPlus,
-  X,
-} from "lucide-react";
+import { Check, LoaderCircle, UserCheck, UserPlus, X } from "lucide-react";
 
 import {
   acceptFollowRequest,
@@ -38,8 +31,30 @@ export default function FollowRequests() {
   }, []);
 
   useEffect(() => {
-    loadRequests();
-  }, [loadRequests]);
+    let isMounted = true;
+
+    getPendingFollowRequests()
+      .then((response) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setRequests(response?.requests ?? []);
+        setStatus("success");
+      })
+      .catch((err) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(err.message);
+        setStatus("error");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleAccept(request) {
     const requestId = request.id;

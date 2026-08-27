@@ -26,18 +26,12 @@ export default function Discover() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [users, setUsers] = useState([]);
-  const [search, setSearch] = useState(searchParams.get("search") ?? "");
+  const search = searchParams.get("search") ?? "";
 
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
 
   const [followStates, setFollowStates] = useState({});
-
-  useEffect(() => {
-    const querySearch = searchParams.get("search") ?? "";
-
-    setSearch(querySearch);
-  }, [searchParams]);
 
   useEffect(() => {
     let mounted = true;
@@ -65,7 +59,7 @@ export default function Discover() {
 
         const allUsers = usersResponse?.users ?? [];
 
-        // The backend returns { follows } for these endpoints.
+        // The backend returns { following }, { requests }, and { sentRequests }.
         const allFollowing = followingResponse?.following ?? [];
         const receivedRequests = requestsResponse?.requests ?? [];
         const sentRequests = sentRequestsResponse?.sentRequests ?? [];
@@ -143,8 +137,6 @@ export default function Discover() {
 
   function handleSearchChange(event) {
     const value = event.target.value;
-
-    setSearch(value);
 
     const params = new URLSearchParams(searchParams);
 
