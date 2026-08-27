@@ -1,11 +1,16 @@
 import { useState } from "react";
-import { ArrowRight, LoaderCircle } from "lucide-react";
+import { ArrowRight, LoaderCircle, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import AuthInput from "../../components/auth/AuthInput.jsx";
 import AuthLayout from "../../layouts/AuthLayout.jsx";
 import OAuthButton from "../../components/auth/OAuthButton.jsx";
 import { useAuth } from "../../context/useAuth.js";
+
+const DEMO_CREDENTIALS = {
+  email: "clarke@example.com",
+  password: "DemoPassword123!",
+};
 
 export default function Login() {
   const { login } = useAuth();
@@ -39,6 +44,23 @@ export default function Login() {
 
     try {
       await login(form);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDemoLogin() {
+    if (isSubmitting) {
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      await login(DEMO_CREDENTIALS);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -98,6 +120,21 @@ export default function Login() {
           )}
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={handleDemoLogin}
+        disabled={isSubmitting}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-400/20 bg-indigo-400/10 px-4 py-3.5 text-sm font-semibold text-indigo-300 transition hover:border-indigo-400/30 hover:bg-indigo-400/15 hover:text-indigo-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isSubmitting ? (
+          <LoaderCircle size={18} className="animate-spin" />
+        ) : (
+          <Sparkles size={18} />
+        )}
+
+        {isSubmitting ? "Signing in..." : "Try the demo"}
+      </button>
 
       <div className="my-7 flex items-center gap-4">
         <div className="h-px flex-1 bg-white/10" />
