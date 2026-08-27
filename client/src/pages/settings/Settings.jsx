@@ -6,6 +6,7 @@ import {
   Save,
   Trash2,
   UserRound,
+  X,
 } from "lucide-react";
 
 import { deleteAccount } from "../../api/user.js";
@@ -24,13 +25,11 @@ export default function Settings() {
   const [avatarError, setAvatarError] = useState("");
 
   const [isUpdatingUsername, setIsUpdatingUsername] = useState(false);
-
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
-
   const [deleteError, setDeleteError] = useState("");
-
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -89,23 +88,31 @@ export default function Settings() {
     }
   }
 
+  function openDeleteModal() {
+    setDeletePassword("");
+    setDeleteError("");
+    setIsDeleteModalOpen(true);
+  }
+
+  function closeDeleteModal() {
+    if (isDeleting) {
+      return;
+    }
+
+    setIsDeleteModalOpen(false);
+    setDeletePassword("");
+    setDeleteError("");
+  }
+
   async function handleDeleteAccount(event) {
     event.preventDefault();
 
     setDeleteError("");
 
-    const isLocalAccount = Boolean(user?.passwordHash);
+    const isLocalAccount = Boolean(user?.hasPassword);
 
     if (isLocalAccount && !deletePassword.trim()) {
       setDeleteError("Enter your current password to delete your account.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      "This permanently deletes your account and all associated data. This action cannot be undone. Continue?",
-    );
-
-    if (!confirmed) {
       return;
     }
 
@@ -308,61 +315,159 @@ export default function Settings() {
               </div>
             </div>
 
-            <form onSubmit={handleDeleteAccount} className="mt-6">
-              {user?.passwordHash && (
-                <div>
-                  <label
-                    htmlFor="deletePassword"
-                    className="mb-2 block text-sm font-medium text-slate-300"
-                  >
-                    Current password
-                  </label>
-
-                  <input
-                    id="deletePassword"
-                    type="password"
-                    value={deletePassword}
-                    onChange={(event) => {
-                      setDeletePassword(event.target.value);
-                      setDeleteError("");
-                    }}
-                    autoComplete="current-password"
-                    disabled={isDeleting}
-                    placeholder="Enter your password"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-red-400/40 disabled:opacity-50"
-                  />
-                </div>
-              )}
-
-              {!user?.passwordHash && (
-                <p className="text-sm leading-6 text-slate-500">
-                  This account does not have a local password. You can delete it
-                  without entering one.
-                </p>
-              )}
-
-              {deleteError && (
-                <p role="alert" className="mt-3 text-sm text-red-300">
-                  {deleteError}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={isDeleting}
-                className="mt-5 flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-400/15 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isDeleting ? (
-                  <LoaderCircle size={16} className="animate-spin" />
-                ) : (
-                  <Trash2 size={16} />
-                )}
-                Delete account
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={openDeleteModal}
+              className="mt-6 flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-400/15"
+            >
+              <Trash2 size={16} />
+              Delete account
+            </button>
           </section>
         </div>
       </div>
+
+      {/* Delete account modal */}
+      {isDeleteModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5 backdrop-blur-sm"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeDeleteModal();
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-account-title"
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#111126] p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-400/10 text-red-300">
+                  <AlertTriangle size={18} />
+                </div>
+
+                <div>
+                  <h2
+                    id="delete-account-title"
+                    className="font-semibold text-white"
+                  >
+                    Delete your account?
+                  </h2>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    This permanently deletes your account and all associated
+                    data. This action cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={isDeleting}
+                className="shrink-0 rounded-full p-2 text-slate-500 transition hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {user?.hasPassword ? (
+              <form onSubmit={handleDeleteAccount} className="mt-6">
+                <label
+                  htmlFor="deletePassword"
+                  className="mb-2 block text-sm font-medium text-slate-300"
+                >
+                  Current password
+                </label>
+
+                <input
+                  id="deletePassword"
+                  type="password"
+                  value={deletePassword}
+                  onChange={(event) => {
+                    setDeletePassword(event.target.value);
+                    setDeleteError("");
+                  }}
+                  autoComplete="current-password"
+                  disabled={isDeleting}
+                  autoFocus
+                  placeholder="Enter your password"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-red-400/40 disabled:opacity-50"
+                />
+
+                {deleteError && (
+                  <p role="alert" className="mt-3 text-sm text-red-300">
+                    {deleteError}
+                  </p>
+                )}
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeDeleteModal}
+                    disabled={isDeleting}
+                    className="rounded-xl px-4 py-3 text-sm font-medium text-slate-400 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isDeleting || !deletePassword.trim()}
+                    className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isDeleting && (
+                      <LoaderCircle size={16} className="animate-spin" />
+                    )}
+                    {isDeleting ? "Deleting..." : "Delete account"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-6">
+                <p className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-6 text-slate-400">
+                  This account does not have a local password. You can delete it
+                  without entering one.
+                </p>
+
+                {deleteError && (
+                  <p role="alert" className="mt-3 text-sm text-red-300">
+                    {deleteError}
+                  </p>
+                )}
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeDeleteModal}
+                    disabled={isDeleting}
+                    className="rounded-xl px-4 py-3 text-sm font-medium text-slate-400 transition hover:bg-white/[0.05] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting}
+                    className="flex items-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isDeleting && (
+                      <LoaderCircle size={16} className="animate-spin" />
+                    )}
+                    {isDeleting ? "Deleting..." : "Delete account"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
