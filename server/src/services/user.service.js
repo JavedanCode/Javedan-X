@@ -3,21 +3,37 @@ import { AppError } from '../errors/AppError.js';
 import { verifyPassword, hashPassword } from './password.service.js';
 import { revokeAllUserSessions } from './session.service.js';
 
+const publicUserSelect = {
+  id: true,
+  username: true,
+  displayName: true,
+  bio: true,
+  avatarUrl: true,
+  createdAt: true,
+};
+
 export async function getAllUsers() {
   return prisma.user.findMany({
     orderBy: {
       createdAt: 'desc',
     },
-    select: {
-      id: true,
-      username: true,
-      email: true,
-      displayName: true,
-      bio: true,
-      avatarUrl: true,
-      createdAt: true,
-    },
+    select: publicUserSelect,
   });
+}
+
+export async function getUserById(userId) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: publicUserSelect,
+  });
+
+  if (!user) {
+    throw new AppError('User not found.', 404, 'USER_NOT_FOUND');
+  }
+
+  return user;
 }
 
 export async function findUserByEmail(email) {
@@ -82,7 +98,6 @@ export async function changeUserPassword({ userId, currentPassword, newPassword 
 
   const currentPasswordValid = await verifyPassword(currentPassword, user.passwordHash);
 
-  // Require the existing password for local accounts before allowing a password change.
   if (!currentPasswordValid) {
     throw new AppError('Current password is incorrect.', 401, 'INVALID_CURRENT_PASSWORD');
   }
@@ -109,21 +124,19 @@ export async function changeUserPassword({ userId, currentPassword, newPassword 
     },
   });
 
-  // Changing a password invalidates all existing sessions so previously issued
-  // refresh tokens cannot continue authenticating the account.
   await revokeAllUserSessions(userId);
 
   return updatedUser;
 }
 
-export async function updateUserProfile({ userId, displayName, avatarUrl }) {
-  // Only update fields explicitly supplied by the caller so omitted fields remain unchanged.
+export async function updateUserProfile({ userId, displayName, bio, avatarUrl }) {
   const user = await prisma.user.update({
     where: {
       id: userId,
     },
     data: {
       ...(displayName !== undefined && { displayName }),
+      ...(bio !== undefined && { bio }),
       ...(avatarUrl !== undefined && { avatarUrl }),
     },
     select: {
@@ -131,6 +144,7 @@ export async function updateUserProfile({ userId, displayName, avatarUrl }) {
       username: true,
       email: true,
       displayName: true,
+      bio: true,
       avatarUrl: true,
     },
   });
@@ -139,8 +153,6 @@ export async function updateUserProfile({ userId, displayName, avatarUrl }) {
 }
 
 export async function changeUsername({ userId, username }) {
-  // Check for conflicts before updating, while the database unique constraint
-  // remains the final protection against concurrent updates.
   const existingUser = await prisma.user.findUnique({
     where: {
       username,
@@ -176,8 +188,6 @@ export async function deleteUserAccount({ userId, currentPassword }) {
     throw new AppError('User not found.', 404, 'USER_NOT_FOUND');
   }
 
-  // OAuth-only accounts may not have a password, so password confirmation is
-  // required only when the account has a local password credential.
   if (user.passwordHash) {
     if (!currentPassword) {
       throw new AppError('Current password is required.', 400, 'CURRENT_PASSWORD_REQUIRED');
