@@ -7,6 +7,7 @@ import {
   findFollowing,
   findFollowers,
   findPendingFollowRequests,
+  findPendingSentFollowRequests,
 } from '../services/follow.service.js';
 
 export async function createFollowRequest(req, res, next) {
@@ -98,13 +99,13 @@ export async function removeFollow(req, res, next) {
 
 export async function getFollowing(req, res, next) {
   try {
-    const follows = await findFollowing({
+    const following = await findFollowing({
       userId: req.user.id,
     });
 
     return res.status(200).json({
       success: true,
-      follows,
+      following,
     });
   } catch (error) {
     return next(error);
@@ -113,13 +114,13 @@ export async function getFollowing(req, res, next) {
 
 export async function getFollowers(req, res, next) {
   try {
-    const follows = await findFollowers({
+    const followers = await findFollowers({
       userId: req.user.id,
     });
 
     return res.status(200).json({
       success: true,
-      follows,
+      followers,
     });
   } catch (error) {
     return next(error);
@@ -128,13 +129,28 @@ export async function getFollowers(req, res, next) {
 
 export async function getPendingFollowRequests(req, res, next) {
   try {
-    const follows = await findPendingFollowRequests({
+    const requests = await findPendingFollowRequests({
       userId: req.user.id,
     });
 
     return res.status(200).json({
       success: true,
-      follows,
+      requests,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getPendingSentFollowRequests(req, res, next) {
+  try {
+    const sentRequests = await findPendingSentFollowRequests({
+      userId: req.user.id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      sentRequests,
     });
   } catch (error) {
     return next(error);
