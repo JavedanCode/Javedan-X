@@ -12,6 +12,8 @@ export const updateProfileSchema = z
       .nullable()
       .optional(),
 
+    bio: z.string().trim().max(500, 'Bio must not exceed 500 characters.').nullable().optional(),
+
     avatarUrl: z
       .string()
       .trim()
@@ -20,9 +22,13 @@ export const updateProfileSchema = z
       .nullable()
       .optional(),
   })
-  .refine((data) => data.displayName !== undefined || data.avatarUrl !== undefined, {
-    message: 'At least one profile field must be provided.',
-  });
+  .refine(
+    (data) =>
+      data.displayName !== undefined || data.bio !== undefined || data.avatarUrl !== undefined,
+    {
+      message: 'At least one profile field must be provided.',
+    },
+  );
 
 export const updateUsernameSchema = z.object({
   username: z
