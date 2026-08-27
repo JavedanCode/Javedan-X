@@ -68,6 +68,7 @@ export async function login(req, res, next) {
         email: req.user.email,
         displayName: req.user.displayName,
         avatarUrl: req.user.avatarUrl,
+        hasPassword: Boolean(req.user.passwordHash),
       },
     });
   } catch (error) {
@@ -84,6 +85,7 @@ export async function getMe(req, res) {
       email: req.user.email,
       displayName: req.user.displayName,
       avatarUrl: req.user.avatarUrl,
+      hasPassword: Boolean(req.user.passwordHash),
     },
   });
 }
