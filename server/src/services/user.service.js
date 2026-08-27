@@ -3,6 +3,23 @@ import { AppError } from '../errors/AppError.js';
 import { verifyPassword, hashPassword } from './password.service.js';
 import { revokeAllUserSessions } from './session.service.js';
 
+export async function getAllUsers() {
+  return prisma.user.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+      displayName: true,
+      bio: true,
+      avatarUrl: true,
+      createdAt: true,
+    },
+  });
+}
+
 export async function findUserByEmail(email) {
   return prisma.user.findUnique({
     where: {

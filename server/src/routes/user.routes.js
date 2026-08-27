@@ -7,6 +7,7 @@ import {
   requestEmailChangeController,
   confirmEmailChangeController,
   deleteAccount,
+  getUsers,
 } from '../controllers/user.controller.js';
 
 import { authenticate } from '../middleware/authenticate.js';
@@ -53,6 +54,8 @@ router.post(
 );
 
 router.delete('/me', authenticate, validate(deleteAccountSchema), deleteAccount);
+
+router.get('/', authenticate, getUsers);
 
 router.get('/:userId/posts', authenticate, validateParams(userIdParamsSchema), getPostsByUser);
 

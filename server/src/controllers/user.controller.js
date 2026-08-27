@@ -3,11 +3,25 @@ import {
   updateUserProfile,
   changeUsername,
   deleteUserAccount,
+  getAllUsers,
 } from '../services/user.service.js';
 
 import { requestEmailChange, confirmEmailChange } from '../services/email-change.service.js';
 
 import { accessTokenCookieOptions, refreshTokenCookieOptions } from '../config/cookies.js';
+
+export async function getUsers(req, res, next) {
+  try {
+    const users = await getAllUsers();
+
+    return res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
 
 export async function updateProfile(req, res, next) {
   try {
